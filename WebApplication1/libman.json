@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "jsrender@1.0.13",
+      "destination": "wwwroot/lib/jsrender/"
+    },
+    {
+      "library": "moment.js@2.29.4",
+      "destination": "wwwroot/lib/momentjs/"
+    },
+    {
+      "library": "datatable@2.0.2",
+      "destination": "wwwroot/lib/datatable"
+    },
+    {
+      "library": "bootstrap@5.3.3",
+      "provider": "cdnjs",
+      "destination": "wwwroot/lib/bootstrap"
+    },
+    {
+      "library": "jquery@3.7.1",
+      "provider": "cdnjs",
+      "destination": "wwwroot/lib/jquery"
+    }
+  ]
+}

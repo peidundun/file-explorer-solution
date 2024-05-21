@@ -1,0 +1,246 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<div class="x-actions">
+    <button type="button" class="btn btn-primary x-addnew">上传</button>
+</div>
+<div class="x-units">
+    <div class="x-units-item">
+
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">上传文件</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form enctype="multipart/form-data">
+                    <input type="hidden" name="id" />
+                    <div class="mb-3">
+                        <label for="formFile" class="form-label">选择文件</label>
+                        <input class="form-control" type="file" name="file" id="formFile" multiple>
+                    </div>
+                    <div style="text-align:right;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>&nbsp;&nbsp;
+                        <button type="button" class="btn btn-primary x-save">上传</button>
+                    </div>
+                </form>
+            </div>
+            @*   <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>*@
+        </div>
+    </div>
+</div>
+@section Styles {
+    <style type="text/css">
+        .x-actions {
+            padding: 10px 0
+        }
+        .x-units {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .x-units-item {
+            margin-right: 10px;
+
+        }
+
+        .x-img-holder {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            border: solid #ccc 1px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .x-img-holder .x-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-position:center;
+            background-size:contain;
+            background-repeat:no-repeat;
+    
+        }
+
+        .x-img-holder .x-name {
+            position:absolute;
+            left: 0;
+            bottom: 0;
+            width:100%;
+            z-index:1;
+                white-space: nowrap; /* 确保文本在一行内显示 */
+                overflow: hidden; /* 隐藏超出容器的内容 */
+                text-overflow: ellipsis; /* 使用省略号表示被截断的文本 */
+
+                background: #00000075;
+                color:#fff;
+                padding:5px;
+        }
+        .x-item-name {
+            width: 200px;
+            word-break: break-all;
+            word-wrap:break-word;
+        }
+        .x-item-actions {
+            text-align:center;
+        }
+
+    </style>
+}
+@section Scripts {
+    <script src="/lib/jsrender/jsrender.js"></script>
+    <script id="t-units-item" type="text/x-jsrender">
+        <div class="x-units-item">
+            <div class="x-img-holder">
+                <a href="{{:url}}" title="{{:originalName}}" target="_blank" class="x-img" style="background-image:url({{:iconUrl}})">
+
+                </a>
+                <div class="x-name">{{:originalName}}</div>
+            </div>
+            <div class="x-item-actions">
+                <a href="{{:url}}?fileName={{:originalName}}">下载</a>
+            </div>
+        </div>
+    </script>
+    <script>
+        var PageActions = function () {
+            let modal = new bootstrap.Modal("#editModal")
+
+            let activeGroupId = null
+            let items = []
+
+            let fetchAndPopulateUnitsData = function () {
+                let url = `@Url.Action("GetFiles", "files")`
+                $.post(url, function (res) {
+                    console.log(res)
+
+                    $(".x-units").empty();
+                    if (res.data && res.data.length > 0) {
+                        items = res.data
+
+                        res.data.forEach(z => {
+                            let tmpl = $.templates('#t-units-item')
+                            let $itemEl = tmpl.render(z)
+                            $(".x-units").append($itemEl)
+
+                        })
+                    } else {
+                        items = []
+
+                        $(".x-units").append(`<div>无内容</div>`)
+                    }
+                })
+            }
+
+            let handleAddnew = function () {
+                $(".x-addnew").on('click', function () {
+                    let $modal = $("#editModal")
+                    $modal.find('.modal-title').text("上传文件")
+                    $modal.find('input').val("")
+
+                    modal.show();
+
+                })
+            }
+
+            let handleDelete = function () {
+                $(".x-units").on('click', '.x-delete', function () {
+                    let $itemEL = $(this).parents('.x-units-item')
+                    let itemId = $itemEL.data("id");
+                    var itemData = items.find(z => z.id == itemId)
+
+                    if (confirm("是否确认删除：" + itemData.name)) {
+                        let data = {
+                            id: itemData.id
+                        }
+                        $.ajax({
+                            type: 'post',
+                            url: '@Url.Action("Delete")',
+                            data,
+                            success(res) {
+                                console.log("success", res);
+
+                                fetchAndPopulateUnitsData();
+                            }
+                        })
+                    }
+                });
+
+            }
+
+            let handleView = function () {
+                $(".x-units").on('click', '.x-units-item', function () {
+                    let fileUrl = $(this).data('url')
+                    window.open(fileUrl)
+                })
+            }
+
+            let handleSave = function () {
+                let $modal = $("#editModal")
+                $modal.on('click', '.x-save', function () {
+
+                    let data = $modal.find('form').serialize()
+                    console.log(data)
+                    let url = `@Url.Action("UploadFile", "files")`
+
+                    var $form = $modal.find("form")
+                    //fileInput = $("#formFile")[0]
+                    var fd = new FormData($form[0]);
+                    $.ajax({
+                        type: 'post',
+                        url: url,
+                        data: fd,
+                        contentType: false,
+                        processData: false,
+                        success(res) {
+                            console.log("success", res);
+
+                            modal.hide();
+
+                            fetchAndPopulateUnitsData();
+                        },
+                        error(e) {
+                            console.log("error:", e)
+                        },
+                        complete(res) {
+                            console.log("complete", res)
+                        }
+                    })
+
+                    return false
+                })
+            }
+
+            return {
+                //main function to initiate the module
+                init: function () {
+
+                    fetchAndPopulateUnitsData()
+                    handleAddnew()
+
+                    handleSave()
+                    handleDelete()
+
+                    $("#editModal").on('shown.bs.modal', () => {
+                        $('#editModal input[name=name]').focus()
+                    })
+                }
+            };
+
+        }();
+
+        jQuery(document).ready(function () {
+            PageActions.init();
+        });
+
+    </script>
+}
